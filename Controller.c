@@ -15,6 +15,7 @@
 #define ARCH_VERSION 0
 
 int action = 0;
+int lifetime = 0;
 
 void agents_controller( WORLD_TYPE *w )
 { 
@@ -33,11 +34,12 @@ void agents_controller( WORLD_TYPE *w )
 	if( a->instate->metabolic_charge > 0.0 )
 	{  
 	    simtime++;
+            lifetime++;
     	}
     	else
     	{
-      		printf("Agent died: simtime = %d\n",simtime);
-                exit(0);
+	   printf("Agent died: simtime = %d, lifetime = %d\n",simtime, lifetime);
+           exit(0);
     	}
 
         /* decrement metabolic charge by basil metabolism rate.  DO NOT REMOVE THIS CALL */
