@@ -12,13 +12,20 @@
  *
  */
 
-#define ARCH_VERSION 1
-#define MAX_TRIALS = 1000;
 
+const int ARCH_VERSION = 1;
+const int MAX_TRIALS = 1000;
 int action = 0;
 int lifetime = 0;
-const int speed = 0.05;   // taken directly from the original version of this file.
-int trial = 1;
+const double speed = 0.05;   // taken directly from the original version of this file.
+int trial = 0;
+int lifetimes[MAX_TRIALS];
+int nsomareceptors;
+float x,y,h;
+float** skinvalues;
+float delta_energy;
+FILE* time_metrics_file;
+FILE* lifespan_metrics_file;
 
 void agents_controller( WORLD_TYPE *w )
 { 
@@ -30,15 +37,17 @@ void agents_controller( WORLD_TYPE *w )
   { printf("*************************************\n");
     printf("ARCHITECTURE VERSION: %d\n",ARCH_VERSION);
     printf("*************************************\n");
-    
-    char time_metrics_filename[15], lifespan_metrics_filename[15];
-    snprintf(time_metrics_filename, sizeof(time_metrics_filename), "arch_%d_timestep.txt");
-    FILE* time_metrics_file = fopen(time_metrics_filename, 'w');
+
+    const int name_size = 30;
+    char time_metrics_filename[name_size];
+    char lifespan_metrics_filename[name_size]; 
+    sprintf(time_metrics_filename, "arch_%d_time_metrics.txt", ARCH_VERSION);
+    time_metrics_file = fopen(time_metrics_filename, "a+w");
     if (time_metrics_file == NULL)
       printf("ERROR: Could not open %s for metric data writing!\n",time_metrics_filename);
 
-    snprintf(time_metrics_filename, sizeof(time_metrics_filename), "arch_%d_timestep.txt");
-    FILE* lifespan_metrics_file = fopen(lifespan_metrics_filename, "a+w");
+    sprintf(lifespan_metrics_filename, "arch_%d_lifespan_metrics.txt", ARCH_VERSION);
+    lifespan_metrics_file = fopen(lifespan_metrics_filename, "a+w");
     if (lifespan_metrics_file == NULL)
       printf("ERROR: Could not open %s for metric data writing!\n",lifespan_metrics_filename);
   }
@@ -49,29 +58,62 @@ void agents_controller( WORLD_TYPE *w )
 	
 	/* test if agent is alive. If so, move in a straight line in the initial direction */
 	if( a->instate->metabolic_charge > 0.0 )
-	{  
-            lifetime++;
+	{   lifetime++;
+
+	    /* Eat object if detected */
+	    skinvalues = extract_soma_receptor_values_pointer( a ) ;
+	    nsomareceptors = get_number_of_soma_receptors( a ) ;
+            int k;
+	    for( k=0 ; k<nsomareceptors ; k++ )
+	    {  
+	       if( (k==0 || k==1 || k==7 ) && skinvalues[k][0] > 0.0 )
+	       {
+		  printf("eating something\n");
+	 	  delta_energy = eat_colliding_object( w, a, k) ;
+	       }
+               
+	    }
+
+            /* move the agents body */
+	    set_forward_speed_agent( a, speed ) ;
+	    move_body_agent( a ) ;
+
+	    /* decrement metabolic charge by basil metabolism rate.  DO NOT REMOVE THIS CALL */
+	    basal_metabolism_agent( a ) ;
     	}
     	else
     	{
 	   printf("Agent died: simtime = %d, lifetime = %d\n",simtime, lifetime);
-           //TODO:  Reset lifetime, write data to file, remake agent in random orientation
            
+           // Record and reset lifetime
+           lifetimes[trial] = lifetime;
+           lifetime = 0;  
+           /**************************/           
+
+           // TODO: Record and reset other metrics here 
+
+           /**************************/           
+
+           // Remake agent in random orientation, reset flatworld condition        
+           restore_objects_to_world( Flatworld ) ;  /* restore all of the objects back into the world */
+	   reset_agent_charge( a ) ;               /* recharge the agent's battery to full */
+	   a->instate->itemp[0] = 0 ;              /* zero the number of object's eaten accumulator */
+	   x = distributions_uniform( Flatworld->xmin, Flatworld->xmax ) ; /* pick random starting position and heading */
+	   y = distributions_uniform( Flatworld->ymin, Flatworld->ymax ) ;
+	   h = distributions_uniform( -179.0, 179.0) ;
+	   printf("\nagent_controller- new coordinates after restoration:  x: %f y: %f h: %f\n",x,y,h) ;
+	   set_agent_body_position( a, x, y, h ) ;    /* set new position and heading of agent */
+           /*********************************************************/           
+   
            trial++;
-           if (trial > MAX_TRIALS)
-	   {  printf("%d trials completed, exiting\n", trial);
+           if (trial >= MAX_TRIALS)  // experiment complete, write and close out data files then exit
+	   {  printf("%d trials completed, exiting\n", trial-1);
+	      // TODO: write time, lifespan metrics out to files
 	      fclose(time_metrics_file); 
               fclose(lifespan_metrics_file);
               exit(0);
 	   }
     	}
-
-	/* move the agents body */
-	set_forward_speed_agent( a, speed ) ;
-	move_body_agent( a ) ;
-
-	/* decrement metabolic charge by basil metabolism rate.  DO NOT REMOVE THIS CALL */
-	basal_metabolism_agent( a ) ;
 
 } 
 
