@@ -19,7 +19,7 @@ int action = 0;
 int lifetime = 0;
 const double speed = 0.05;   // taken directly from the original version of this file.
 int trial = 0;
-int lifetimes[MAX_TRIALS];
+int lifetimes[1000];
 int nsomareceptors;
 float x,y,h;
 float** skinvalues;
