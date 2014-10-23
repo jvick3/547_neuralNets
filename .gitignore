@@ -1,6 +1,6 @@
 *.o
 FWmain
 *~
-./report/*.log
-./report/*.aux
-./report/*.swp
+*.log
+*.aux
+*.swp
