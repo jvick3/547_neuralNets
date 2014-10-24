@@ -2,8 +2,8 @@
 CC = gcc
 FILES = FWmain.o
 #for Linux
-#IPATH= -I/usr/X11R6/include 
-#LPATH= -L/usr/X11R6/lib
+IPATH= -I/usr/X11R6/include 
+LPATH= -L/usr/X11R6/lib
 
 OPSYS = $(shell uname)
 
@@ -19,10 +19,20 @@ endif
 
 
 FWmain: $(FILES)
-	 $(CC) -g -Wall $(COPTS) $(FILES) $(IPATH) $(LPATH) $(LDLIBS) -o FWmainNG
+	 $(CC) -g -Wall $(COPTS) $(FILES) $(IPATH) $(LPATH) $(LDLIBS) -o FWmain
 
 FWmain.o: FWmain.c 
 
-	$(CC) -c -Wall $(COPTS) $(IPATH) FWmainNG.c
+	$(CC) -c -Wall $(COPTS) $(IPATH) FWmain.c
+
+ng: 
+	$(CC) -c -Wall -02 $(IPATH) FWmainNG.c -o FWmain
+
+run: FWmain
+	./FWmain
+
+runng: ng
+	./FWmain
+
 clean:
 	-rm -f *.o FWmain
