@@ -26,7 +26,7 @@ FWmain.o: FWmain.c
 	$(CC) -c -Wall $(COPTS) $(IPATH) FWmain.c
 
 ng: 
-	$(CC) -c -Wall -02 $(IPATH) FWmainNG.c -o FWmain
+	$(CC) -c -Wall -O2 $(IPATH) FWmainNG.c -o FWmain
 
 run: FWmain
 	./FWmain
