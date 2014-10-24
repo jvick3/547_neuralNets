@@ -24,5 +24,15 @@ FWmain: $(FILES)
 FWmain.o: FWmain.c 
 
 	$(CC) -c -Wall $(COPTS) $(IPATH) FWmain.c
+
+ng: 
+	gcc -o FWmain -O2 FWmainNG.c -lm
+
+run: FWmain
+	./FWmain
+
+runng: ng
+	./FWmain
+
 clean:
 	-rm -f *.o FWmain
