@@ -19,10 +19,10 @@ endif
 
 
 FWmain: $(FILES)
-	 $(CC) -g -Wall $(COPTS) $(FILES) $(IPATH) $(LPATH) $(LDLIBS) -o FWmain
+	 $(CC) -g -Wall $(COPTS) $(FILES) $(IPATH) $(LPATH) $(LDLIBS) -o FWmainNG
 
 FWmain.o: FWmain.c 
 
-	$(CC) -c -Wall $(COPTS) $(IPATH) FWmain.c
+	$(CC) -c -Wall $(COPTS) $(IPATH) FWmainNG.c
 clean:
 	-rm -f *.o FWmain
