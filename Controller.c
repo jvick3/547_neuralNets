@@ -18,11 +18,12 @@ float heading = -179.0;
 int total_food_eaten = 0, beneficial_food_eaten = 0, harmful_food_eaten = 0,
     neutral_food_eaten = 0, all_food_eaten = 0;
 const int middle_eye = 15;
-double weights[] = {1.0, 1.0, 1.0};
+double weights[3] = {1.0, 1.0, 1.0};
 const double learnRate = 0.01;
 float sum_e_squared = 0;
 
 void agents_controller( WORLD_TYPE *w ) { 
+
   simtime++;
   
   // First call of this life, do some setup 
@@ -50,7 +51,7 @@ void agents_controller( WORLD_TYPE *w ) {
     if (perceptron_metrics_file == NULL)
       printf("ERROR: Could not open %s for metric data writing!\n",perceptron_metrics_filename);
 
-    weights[0] = weights[1] = weights[2] = 0; // init weights for perceptron
+    //    weights[0] = weights[1] = weights[2] = 1.0; // init weights for perceptron
   }
 
   AGENT_TYPE *a ;
@@ -75,10 +76,9 @@ void agents_controller( WORLD_TYPE *w ) {
       if(k == 7 && skinvalues[k][0] > 0.0 ) {
         // Read eyes
         read_visual_sensor(w, a);
-        
-        // this give us the receptor pointing at the closest 
-        // item we can see. This corresponds to the element we 
-        // are about to eat
+        // this give us the receptor pointing at the closest item we
+        // can see. This corresponds to the element we are about to
+        // eat
         int max_receptor = intensity_winner_takes_all( a );
         if (max_receptor >= a->instate->eyes[0]->nreceptors || 
             max_receptor < 0)
@@ -100,8 +100,6 @@ void agents_controller( WORLD_TYPE *w ) {
         total_food_eaten++;
         all_food_eaten++;
 
-        printf("Red: %f, Green: %f, Blue: %f\n",red, green, blue);
-        printf("RW:  %f, GW   : %f, Bw  : %f\n", weights[0], weights[1], weights[0]); 
         float v = (red * weights[0]) + (green * weights[1]) + (blue * weights[2]);
         int desired = ((delta_energy > 0) ? 1 : 0);
         float error = desired - v;
@@ -128,8 +126,9 @@ void agents_controller( WORLD_TYPE *w ) {
 
     // Write e^2 error if it has eaten anything
     if (total_food_eaten != 0) { 
+      //print the average e^2 error to the file
       fprintf(perceptron_metrics_file, "%d %f\n", 
-              all_food_eaten, sqrt(sum_e_squared));
+              all_food_eaten, sqrt(sum_e_squared) / total_food_eaten);
       sum_e_squared = 0;
     }
 
