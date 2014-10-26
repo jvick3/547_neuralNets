@@ -75,7 +75,7 @@ void agents_controller( WORLD_TYPE *w ) {
     read_visual_sensor(w, a);
 
     const int k = 1;
-    if (skinvaluesskinvalues[1][0] > 0.0 && skinvalues[7][0] > 0.0)  // front sensors (supposedly)
+    if (skinvalues[1][0] > 0.0 && skinvalues[7][0] > 0.0)  // front sensors (supposedly)
     {    
         printf("eating\n");
 
