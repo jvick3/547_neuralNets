@@ -1,10 +1,10 @@
 
 
 const int ARCH_VERSION = 3;
-const int MAX_TRIALS = 3600;
+const int MAX_TRIALS = 720;
 int action = 0;
 int lifespan = 0;
-const double speed = 0.1;   // taken directly from the original version of this file.
+const double speed = 0.5;   // taken directly from the original version of this file.
 int trial = 0;
 int lifespans[MAX_TRIALS];
 int nsomareceptors, collision_flag = 0;
@@ -14,7 +14,7 @@ float delta_energy;
 FILE* time_metrics_file;
 FILE* lifespan_metrics_file;
 FILE* perceptron_metrics_file;
-float heading = -179.0;
+float heading = 188.0;
 int total_food_eaten = 0, beneficial_food_eaten = 0, harmful_food_eaten = 0,
     neutral_food_eaten = 0, all_food_eaten = 0;
 const int middle_eye = 15;
@@ -70,6 +70,9 @@ void agents_controller( WORLD_TYPE *w ) {
     collision_flag = read_soma_sensor(w, a) ;
     skinvalues = extract_soma_receptor_values_pointer( a ) ;
     nsomareceptors = get_number_of_soma_receptors( a ) ;
+    
+    // Read visual sensors
+    read_visual_sensor(w, a);
 
     const int k = 1;
     if( skinvalues[1][0] > 0.0 && skinvalues[7][0] > 0.0)  // front sensors
@@ -77,7 +80,6 @@ void agents_controller( WORLD_TYPE *w ) {
         printf("eating\n");
         // Read middle (front of agent) eye
 
-        read_visual_sensor(w, a);
 	int max_receptor = intensity_winner_takes_all( a );
         float red = a->instate->eyes[0]->values[max_receptor][0];
         float green = a->instate->eyes[0]->values[max_receptor][1];
@@ -95,7 +97,7 @@ void agents_controller( WORLD_TYPE *w ) {
         total_food_eaten++;
         all_food_eaten++;
 
-        if (! (red == 0.0 && green == 0.0 && blue == 0.0))  // use vision for Perceptron learning if possible
+        if (red > 0.5 || green > 0.5 || blue > 0.5)  // use vision for Perceptron learning if possible
 	{
 	   printf("eating:  r = %f, g = %f, b = %f\n", red, green, blue);
 	   printf("weights: (%f, %f, %f)\n", weights[0], weights[1], weights[2]);
@@ -109,6 +111,12 @@ void agents_controller( WORLD_TYPE *w ) {
 	   weights[2] += (learnRate * error * blue);
 	   printf("weights after correction: (%f, %f, %f)\n", weights[0], weights[1], weights[2]);
 	   sum_e_squared += error * error;
+
+	   if ((green > blue || green > red) && desired == -1)
+	        printf("object is more green, but desired == -1: heading = %f\n", heading);
+	     
+	   if ((blue > green || red > green) && desired == 1)
+                printf("object is more blue or red, but desired == +1: heading = %f\n", heading);
 	}
       }
 
@@ -130,6 +138,7 @@ void agents_controller( WORLD_TYPE *w ) {
       //print the average e^2 error to the file
       fprintf(perceptron_metrics_file, "%d %f\n", 
               all_food_eaten, sqrt(sum_e_squared) / total_food_eaten);
+      printf("agent dead: RMS err = %f\n", sqrt(sum_e_squared) / total_food_eaten);
       sum_e_squared = 0;
     }
 
@@ -147,13 +156,14 @@ void agents_controller( WORLD_TYPE *w ) {
     /* zero the number of object's eaten accumulator */
     a->instate->itemp[0] = 0 ;
 
-    /* pick random starting position and heading */
+    /* update start position and heading */
     x = 0; 
     y = 0;
-    heading += 1.0;
 
     /* set new position and heading of agent */
+    printf("setting angle: heading = %f\n", heading);
     set_agent_body_position( a, x, y, heading);
+    heading += 1.0;
     /*********************************************************/           
    
     trial++;
