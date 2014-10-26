@@ -1,12 +1,12 @@
 
 
 const int ARCH_VERSION = 3;
-const int MAX_TRIALS = 360;
+const int MAX_TRIALS = 3600;
 int action = 0;
 int lifespan = 0;
-const double speed = 0.05;   // taken directly from the original version of this file.
+const double speed = 0.1;   // taken directly from the original version of this file.
 int trial = 0;
-int lifespans[360];
+int lifespans[MAX_TRIALS];
 int nsomareceptors, collision_flag = 0;
 float x,y,h;
 float** skinvalues, eyeValues;
@@ -19,7 +19,7 @@ int total_food_eaten = 0, beneficial_food_eaten = 0, harmful_food_eaten = 0,
     neutral_food_eaten = 0, all_food_eaten = 0;
 const int middle_eye = 15;
 double weights[3] = {1.0, 1.0, 1.0};
-const double learnRate = 0.01;
+const double learnRate = 0.1;
 float sum_e_squared = 0;
 
 void agents_controller( WORLD_TYPE *w ) { 
@@ -66,28 +66,23 @@ void agents_controller( WORLD_TYPE *w ) {
 
     lifespan++;
 
-    /* Eat object if detected */
+    // Read soma sensors 
     collision_flag = read_soma_sensor(w, a) ;
     skinvalues = extract_soma_receptor_values_pointer( a ) ;
     nsomareceptors = get_number_of_soma_receptors( a ) ;
-    int k;
-    for( k=0 ; k < nsomareceptors ; k++ ) {   
 
-      if(k == 7 && skinvalues[k][0] > 0.0 ) {
-        // Read eyes
+    const int k = 1;
+    if( skinvalues[1][0] > 0.0 && skinvalues[7][0] > 0.0)  // front sensors
+    {    
+        printf("eating\n");
+        // Read middle (front of agent) eye
+
         read_visual_sensor(w, a);
-        // this give us the receptor pointing at the closest item we
-        // can see. This corresponds to the element we are about to
-        // eat
-        int max_receptor = intensity_winner_takes_all( a );
-        if (max_receptor >= a->instate->eyes[0]->nreceptors || 
-            max_receptor < 0)
-          continue;
+	int max_receptor = intensity_winner_takes_all( a );
         float red = a->instate->eyes[0]->values[max_receptor][0];
         float green = a->instate->eyes[0]->values[max_receptor][1];
         float blue = a->instate->eyes[0]->values[max_receptor][2];
 
-        //printf("eating:  r = %f, g = %f, b = %f\n", red, green, blue);
         delta_energy = eat_colliding_object( w, a, k) ;
 
         if (delta_energy == 0) 
@@ -100,16 +95,22 @@ void agents_controller( WORLD_TYPE *w ) {
         total_food_eaten++;
         all_food_eaten++;
 
-        float v = (red * weights[0]) + (green * weights[1]) + (blue * weights[2]);
-        int desired = ((delta_energy > 0) ? 1 : 0);
-        float error = desired - v;
-        printf("Error: %f\n", error);
-        weights[0] += (learnRate * error * red);
-        weights[1] += (learnRate * error * green);
-        weights[2] += (learnRate * error * blue);
-        sum_e_squared += error * error;
+        if (! (red == 0.0 && green == 0.0 && blue == 0.0))  // use vision for Perceptron learning if possible
+	{
+	   printf("eating:  r = %f, g = %f, b = %f\n", red, green, blue);
+	   printf("weights: (%f, %f, %f)\n", weights[0], weights[1], weights[2]);
+
+	   float v = (red * weights[0]) + (green * weights[1]) + (blue * weights[2]);
+	   int desired = ((delta_energy > 0) ? 1 : -1);
+	   float error = desired - v;
+	   printf("v = %f, desired = %d, Error: %f\n", v, desired, error);
+	   weights[0] += (learnRate * error * red);
+	   weights[1] += (learnRate * error * green);
+	   weights[2] += (learnRate * error * blue);
+	   printf("weights after correction: (%f, %f, %f)\n", weights[0], weights[1], weights[2]);
+	   sum_e_squared += error * error;
+	}
       }
-    }
 
     /* move the agents body */
     set_forward_speed_agent( a, speed ) ;
