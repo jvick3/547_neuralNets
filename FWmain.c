@@ -13,7 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <GL/glut.h>
+#include <GLUT/glut.h>
 #include "Distributions_Funcs.h"
 #include "FlatworldIICore.h"
 #include "GraphicsCore.h"

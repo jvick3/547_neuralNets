@@ -8,6 +8,9 @@
  */
   
 /*------------------------ General functions -------------------------------------------------------------------*/
+
+const double learned_weights[3] = {-1.211087, 1.629145, -1.166483};
+
 float min( float x, float y) 
 {
   if( x<y ) 
@@ -1948,7 +1951,7 @@ void scan_head_agent_1( AGENT_TYPE *a, float thmax, float thmin, float period )
   
 }
 
-int intensity_winner_takes_all( AGENT_TYPE *a )
+int classified_winner_takes_all( AGENT_TYPE *a )
 { 
   VISUAL_SENSOR_TYPE **eyes = a->instate->eyes ;
   int nr,nb ;
@@ -1967,8 +1970,12 @@ int intensity_winner_takes_all( AGENT_TYPE *a )
     
     if( intensity>0.0 && intensity>maxintensity ) 
     {
-      maxintensityrec = j ;
-      maxintensity = intensity ;
+      double activ = (learned_weights[0]*eyes[0]->values[j][0]) + (learned_weights[1]*eyes[0]->values[j][1])
+	                + (learned_weights[2]*eyes[0]->values[j][2]); 
+      if (activ > 0)
+      {  maxintensityrec = j ;
+         maxintensity = intensity ;
+      }
     }
   }
   if(eyes[0]->seen_objects[maxintensityrec]!=NULL )
