@@ -1951,6 +1951,40 @@ void scan_head_agent_1( AGENT_TYPE *a, float thmax, float thmin, float period )
   
 }
 
+int intensity_winner_takes_all( AGENT_TYPE *a )
+{ 
+  VISUAL_SENSOR_TYPE **eyes = a->instate->eyes ;
+  int nr,nb ;
+  int i,j ;
+  int maxintensityrec = -1 ;
+  float intensity, maxintensity = -1.0 ;
+  
+  nr = eyes[0]->nreceptors ;
+  nb = eyes[0]->nbands ;
+  for( j=0 ; j<nr ; j++ ) 
+  {
+    intensity = 0 ;
+    for( i=0 ; i<nb ; i++ )
+      intensity += pow( eyes[0]->values[j][i], 2.0 ) ;
+    intensity = sqrt( intensity ) ;
+    
+    if( intensity>0.0 && intensity>maxintensity ) 
+    {
+      maxintensityrec = j ;
+      maxintensity = intensity ;
+      
+    }
+  }
+  if(eyes[0]->seen_objects[maxintensityrec]!=NULL )
+  {
+    //printf("intensity_winner_takes_all- simtime: %d maxintensityrec: %d  maxintensity: %f obj: %d\n",
+         //simtime,maxintensityrec,maxintensity,eyes[0]->seen_objects[maxintensityrec]->index) ;
+  }
+  
+  return( maxintensityrec ) ;
+
+}
+
 int classified_winner_takes_all( AGENT_TYPE *a )
 { 
   VISUAL_SENSOR_TYPE **eyes = a->instate->eyes ;

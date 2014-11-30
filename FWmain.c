@@ -238,7 +238,12 @@ int main(int argc, char** argv)
 	GEOMETRIC_SHAPE_TYPE *agentshape  ;
   ACOUSTIC_SHAPE_TYPE *sound ;
 	int nsoundreceptors, nsoundbands ;
-  float angle_locations0[31] = {-15.,-14.,-13.,-12.,-11.,-10.,-9.,-8.,-7.,-6.,-5.,-4.,-3.,-2.,-1.,0.,1.,2.,3.,4.,5.,6.,7.,8.,9.,10.,11.,12.,13.,14.,15} ;
+	float angle_locations0[31];
+	int a;
+	const float min = -90.0;
+	int spacing = (int) fabs(min) / 15.0;
+	for (a = 0; a < 31; a++)
+	  angle_locations0[a] = min + (a * spacing);
   float directions0[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} ;
   time_t now ;
   struct tm *date ;

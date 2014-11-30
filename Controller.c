@@ -1,10 +1,10 @@
 
 
-const int ARCH_VERSION = 5;
-const int MAX_TRIALS = 1080;
+const int ARCH_VERSION = 6;
+const int MAX_TRIALS = 360;
 int action = 0;
 int lifespan = 0;
-const double speed = 0.1;   // taken directly from the original version of this file.
+const double speed = 0.05;   
 int trial = 0;
 int lifespans[MAX_TRIALS];
 int nsomareceptors, collision_flag = 0;
@@ -15,12 +15,11 @@ FILE* time_metrics_file;
 FILE* lifespan_metrics_file;
 FILE* perceptron_metrics_file;
 float heading = 0.0;
-float start_heading = 0.0;
+float start_heading = 5;
 int total_food_eaten = 0, beneficial_food_eaten = 0, harmful_food_eaten = 0,
     neutral_food_eaten = 0, all_food_eaten = 0;
 const int middle_eye = 15;
-const double learnRate = 0.1;
-float sum_e_squared = 0;
+const double weights[3] = {-1.211087, 1.629145, -1.166483};
 
 void agents_controller( WORLD_TYPE *w ) { 
 
@@ -51,7 +50,6 @@ void agents_controller( WORLD_TYPE *w ) {
     if (perceptron_metrics_file == NULL)
       printf("ERROR: Could not open %s for metric data writing!\n",perceptron_metrics_filename);
 
-    //    weights[0] = weights[1] = weights[2] = 1.0; // init weights for perceptron
   }
 
   AGENT_TYPE *a ;
@@ -84,48 +82,49 @@ void agents_controller( WORLD_TYPE *w ) {
     }
     else
      {
-       //printf("agents_controller-  No visible object, simtime: %d, changing direction.\n",simtime) ;
-       //read_agent_body_position( a, &bodyx, &bodyy, &bodyth ) ;
        heading += 10.0;
        set_agent_body_angle( a, heading );
      }
     
+    if (collision_flag)
+      {
+	if (skinvalues[0][0] > 0.0 || skinvalues[1][0] > 0.0 || skinvalues[7][0] > 0.0)  
+	  {    
+	    // Find brightest eyelet
+	    int max_bright_eye = intensity_winner_takes_all(a);
+	    if (max_bright_eye >= 0)
+	      { float red = a->instate->eyes[0]->values[max_bright_eye][0];
+		float green = a->instate->eyes[0]->values[max_bright_eye][1];
+		float blue = a->instate->eyes[0]->values[max_bright_eye][2];
+	        		
+		float v = (red * weights[0]) + (green * weights[1]) + (blue * weights[2]);
+		if (v > 0)    // only eat if object is classified as good
+		  {  
+		    printf("eating\n");
 
-    const int k = 1;
-    if (skinvalues[0][0] > 0.0 || skinvalues[1][0] > 0.0 || skinvalues[7][0] > 0.0)  
-    {    
-        //printf("eating\n");
+		    int k;
+		    if (skinvalues[0][0] > 0.0)
+		      k = 0;
+		    else if (skinvalues[1][0] > 0.0)
+		      k = 1;
+		    else
+		      k = 7;
+	    
+		    delta_energy = eat_colliding_object( w, a, k) ;
+		    printf("delta_energy = %f\n", delta_energy);
 
-        float red = a->instate->eyes[0]->values[middle_eye][0];
-        float green = a->instate->eyes[0]->values[middle_eye][1];
-        float blue = a->instate->eyes[0]->values[middle_eye][2];
-        delta_energy = eat_colliding_object( w, a, k) ;
-
-        if (delta_energy == 0) 
-          neutral_food_eaten++;
-        else if (delta_energy < 0)
-          harmful_food_eaten++;
-        else
-          beneficial_food_eaten++;
+		    if (delta_energy == 0) 
+		      neutral_food_eaten++;
+		    else if (delta_energy < 0)
+		      harmful_food_eaten++;
+		    else
+		      beneficial_food_eaten++;
                   
-        total_food_eaten++;
-        all_food_eaten++;
-
-	/*        		
-	float v = (red * weights[0]) + (green * weights[1]) + (blue * weights[2]);
-	int desired = ((delta_energy > 0) ? 1 : -1);
-	float error = desired - v;
-	if (((red > green || blue > green) && desired != 1)
-	      ||
-	    ((green > red || green > blue) && desired == 1))
-	{
-	  weights[0] += (learnRate * error * red);
-	  weights[1] += (learnRate * error * green);
-	  weights[2] += (learnRate * error * blue);
-	  sum_e_squared += error * error;
-	}
-
-	*/
+		    total_food_eaten++;
+		    all_food_eaten++;
+		  }
+	      }
+	  }
     }
 
     /****************************************************************************/
@@ -143,15 +142,6 @@ void agents_controller( WORLD_TYPE *w ) {
     fprintf(lifespan_metrics_file, "%d %d %d %d %d\n", 
             lifespan, total_food_eaten, beneficial_food_eaten, 
             neutral_food_eaten, harmful_food_eaten);
-
-    // Write e^2 error if it has eaten anything
-    if (total_food_eaten != 0) { 
-      //print the average e^2 error to the file
-      //fprintf(perceptron_metrics_file, "%d %f\n", 
-      //       all_food_eaten, sqrt(sum_e_squared) / total_food_eaten);
-      //printf("agent dead: RMS err = %f\n", sqrt(sum_e_squared) / total_food_eaten);
-      sum_e_squared = 0;
-    }
 
     // Record and reset metrics
     lifespans[trial] = lifespan;
